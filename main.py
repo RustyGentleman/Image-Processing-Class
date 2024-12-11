@@ -4,6 +4,9 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
+filtered_img = None
+img_cv = None
+
 def load_image():
 	global img_cv
 	file_path = filedialog.askopenfilename()
@@ -42,6 +45,8 @@ def display_image(img, original=False):
 		edited_image_canvas.create_image(x_offset, y_offset, anchor=tk.NW, image=img_tk)
 
 def apply_filter(filter_type):
+	global img_cv
+	global filtered_img
 	if img_cv is None:
 		return
 	if filter_type == 'Low Pass':
@@ -200,6 +205,20 @@ def apply_filter(filter_type):
 def refresh_canvas():
 	edited_image_canvas.delete('all')  # Limpa a canvas para exibir a nova imagem
 
+def apply():
+	global img_cv
+	global filtered_img
+	print(filtered_img.shape)
+	if len(filtered_img.shape) == 2:
+		filtered_img = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
+	img_cv = filtered_img
+	display_image(filtered_img, True)
+	select()
+
+def save():
+	im = Image.fromarray(img_cv)
+	im.save("output.png")
+
 # Definindo a GUI
 root = tk.Tk()
 root.title('Image Processing App')
@@ -232,15 +251,23 @@ file_menu.add_command(label='Exit', command=root.quit)
 
 # Cria a canvas para a imagem original com borda (sem background)
 original_image_canvas = tk.Canvas(root, width=500, height=500, bg='#111111', highlightthickness=1, highlightbackground='#333333')
-original_image_canvas.grid(row=0, column=0, padx=20, pady=20)
+original_image_canvas.grid(row=0, column=0, padx=20, pady=20, rowspan=2)
 
 # Cria a canvas para a imagem editada com borda (sem background)
 edited_image_canvas = tk.Canvas(root, width=500, height=500, bg='#111111', highlightthickness=1, highlightbackground='#333333')
-edited_image_canvas.grid(row=0, column=2, padx=20, pady=20)
+edited_image_canvas.grid(row=0, column=2, padx=20, pady=20, rowspan=2)
 
 # Settings area
 settings_area = tk.Frame(root, width=300, height=500, background='#111111', highlightthickness=1, highlightbackground='#333333')
 settings_area.grid(row=0, column=1)
+
+# Apply button
+apply_button = tk.Button(settings_area, command=lambda: apply(), text='Apply', width=39)
+apply_button.grid(row=10, column=0, columnspan=2, pady=(0, 10))
+
+# Save button
+save_button = tk.Button(settings_area, command=lambda: save(), text='Save', width=39)
+save_button.grid(row=11, column=0, columnspan=2, pady=(0, 10))
 
 # Filter selector
 def select():
